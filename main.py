@@ -1,21 +1,32 @@
 import telebot
-import g4f
+import os
+from flask import Flask
+from threading import Thread
 
-bot = telebot.TeleBot("8939044527:AAEiWhP7-B5mHlU4mC3-0uLB3_-8D3X3BpQ")
+# Botni sozlash (Tokenni Render'dagi Environment Variables'dan oladi)
+API_TOKEN = os.environ.get('API_TOKEN')
+bot = telebot.TeleBot(API_TOKEN)
 
+# Render "Timed Out" bermasligi uchun veb-server
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot ishlayapti!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+# /start buyrug'i
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Salom! Men Jamilov Kamol tomonidan yaratilgan sun'iy intellektman. Qanaqa savollaringiz bor?")
+    bot.reply_to(message, "Jamilov Kamol tomonidan yaratilgan bot")
 
-@bot.message_handler(func=lambda message: True)
-def handle_message(message):
-    try:
-        response = g4f.ChatCompletion.create(
-            model=g4f.models.gpt_35_turbo,
-            messages=[{"role": "user", "content": message.text}],
-        )
-        bot.reply_to(message, response)
-    except Exception as e:
-        bot.reply_to(message, "Kechirasiz, hozir savolingizga javob bera olmayapman.")
+if __name__ == '__main__':
+    keep_alive()  # Serverni fon rejimida yoqish
+    bot.infinity_polling() # Botni doimiy ishlashini ta'minlash
 
-bot.infinity_polling()
